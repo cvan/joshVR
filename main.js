@@ -1,3 +1,4 @@
+var loadScene = require('./load');
 var mirror = require('./editor');
 var rend = require('./renderer');
 var ui = require('./controls');
@@ -59,7 +60,21 @@ function recursiveDescend (node, scene, gui) {
 };
 
 mirror.doc.on('changes', debounce(rebuild, 1000));
-rebuild();
+
+// Would use `URLSearchParams`, but it's supported by only Firefox atm.
+var qsUrl = /[\?&]url=(.*)/i.exec(window.location.search);
+if (qsUrl && qsUrl[1]) {
+  // TODO: Consider using `es6-promises` polyfill.
+  loadScene(qsUrl[1], function (res) {
+    console.log('Successfully loaded %s', res.responseURL);
+    rebuild();
+  }, function (res) {
+    console.error('Could not load %s\n%s', res.responseURL, res.statusText);
+    rebuild();
+  });
+} else {
+  rebuild();
+}
 
 var xhr = new XMLHttpRequest;
 share.createLoadShareButtons(function () {
@@ -71,4 +86,3 @@ share.createLoadShareButtons(function () {
   var content = mirror.doc.getValue();
   share.post(content);
 });
-
